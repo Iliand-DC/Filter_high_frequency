@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Drawing;
+using System.Numerics;
 
 namespace Filter_high_frequency
 {
@@ -69,16 +70,56 @@ namespace Filter_high_frequency
         {
             return hist_new;
         }
+        private Complex[,] DPF()
+        {
+            Complex[,] dpf_matrix = new Complex[w_b,h_b];
+            for(int x=0; x < w_b; x++)
+            {
+                for (int y = 0; y < h_b; y++)
+                {
+                    for (int u = 0; u < w_b; u++)
+                    {
+                        for (int v = 0; v < h_b; v++)
+                        {
+                            dpf_matrix[x, y] = ((Complex)image_matr[x, y] * Complex.Exp((-Complex.ImaginaryOne) * 2 * Math.PI * ((u * x) / w_b + (v * y) / h_b))) / (w_b * h_b);
+                        }
+                    }
+                }
+            }
+            return dpf_matrix;
+        }
+        private double[,] ReverseDPF(Complex[,] dpf_matrix)
+        {
+            Complex[,] revDpf = new Complex[w_b,h_b];
+            double[,] reverseDpf = new double[w_b, h_b];
+            for (int x = 0; x < w_b; x++)
+            {
+                for (int y = 0; y < h_b; y++)
+                {
+                    for (int u = 0; u < w_b; u++)
+                    {
+                        for (int v = 0; v < h_b; v++)
+                        {
+                            revDpf[x, y] = (dpf_matrix[x, y] * Complex.Exp((Complex.ImaginaryOne) * 2 * Math.PI * ((u * x) / w_b + (v * y) / h_b)));
+                            reverseDpf[x, y] = (int)revDpf[x, y].Real;
+                        }
+                    }
+                }
+            }
+            return reverseDpf;
+        }
         public void FilterHighFrequency()
         {
+            Complex[,] dpf_matrix = DPF();
+            obr_image = ReverseDPF(dpf_matrix);
             for (int x=0;x<w_b;x++)
             {
                 for(int y=0;y<h_b;y++)
                 {
-                    if (image_matr[x, y] > 127)
-                        obr_image[x, y] = image_matr[x, y];
-                    else
-                        obr_image[x, y] = 255 - image_matr[x, y];
+                //    if (image_matr[x, y] > 127)
+                //        obr_image[x, y] = image_matr[x, y];
+                //    else
+                //        obr_image[x, y] = image_matr[x, y];
 
                     byte briteness = Convert.ToByte(obr_image[x, y]);
                     Color c = Color.FromArgb(briteness, briteness, briteness);
