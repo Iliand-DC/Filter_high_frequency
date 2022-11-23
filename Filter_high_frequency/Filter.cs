@@ -70,43 +70,38 @@ namespace Filter_high_frequency
         {
             return hist_new;
         }
+        //Прямой проход преобразования Фурье [Времени жрёт - пипец :( ] 
         private Complex[,] DPF()
         {
             Complex[,] dpf_matrix = new Complex[w_b,h_b];
             for(int x=0; x < w_b; x++)
-            {
                 for (int y = 0; y < h_b; y++)
-                {
                     for (int u = 0; u < w_b; u++)
-                    {
                         for (int v = 0; v < h_b; v++)
-                        {
                             dpf_matrix[x, y] = ((Complex)image_matr[x, y] * Complex.Exp((-Complex.ImaginaryOne) * 2 * Math.PI * ((u * x) / w_b + (v * y) / h_b))) / (w_b * h_b);
-                        }
-                    }
-                }
-            }
             return dpf_matrix;
         }
+        //Обратный проход (С временем всё так же плохо)
         private double[,] ReverseDPF(Complex[,] dpf_matrix)
         {
             Complex[,] revDpf = new Complex[w_b,h_b];
             double[,] reverseDpf = new double[w_b, h_b];
             for (int x = 0; x < w_b; x++)
-            {
                 for (int y = 0; y < h_b; y++)
-                {
                     for (int u = 0; u < w_b; u++)
-                    {
                         for (int v = 0; v < h_b; v++)
                         {
                             revDpf[x, y] = (dpf_matrix[x, y] * Complex.Exp((Complex.ImaginaryOne) * 2 * Math.PI * ((u * x) / w_b + (v * y) / h_b)));
-                            reverseDpf[x, y] = (int)revDpf[x, y].Real;
+                            reverseDpf[x, y] = revDpf[x, y].Real;
                         }
-                    }
-                }
-            }
             return reverseDpf;
+        }
+        //Простой фильтр, который не проспускает значения меньше половины
+        private double H(double value)
+        {
+            if (value > gmax / 2)
+                return value*255/gmax;
+            else return 0;
         }
         public void FilterHighFrequency()
         {
@@ -121,16 +116,23 @@ namespace Filter_high_frequency
                 //    else
                 //        obr_image[x, y] = image_matr[x, y];
 
-                    byte briteness = Convert.ToByte(obr_image[x, y]);
-                    Color c = Color.FromArgb(briteness, briteness, briteness);
-                    bmp_new.SetPixel(x, y, c);
-                    hist_new[(int)obr_image[x, y]]++;
                     if (obr_image[x, y] > gmax)
                         gmax = obr_image[x, y];
                     if (obr_image[x, y] < gmin)
                         gmin = obr_image[x, y];
                 }
             }
+            for(int x=0;x<w_b;x++)
+            {
+                for(int y=0;y<h_b;y++)
+                {
+                    obr_image[x, y] = H(obr_image[x, y]);
+                    byte briteness = Convert.ToByte(obr_image[x, y]);
+                    Color c = Color.FromArgb(briteness, briteness, briteness);
+                    bmp_new.SetPixel(x, y, c);
+                    hist_new[(int)obr_image[x, y]]++;
+                }
+            }    
         }
     }
 }
